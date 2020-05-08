@@ -7,9 +7,9 @@ from io import BytesIO
 
 from fastai.vision import *
 
-model_file_url = 'https://www.dropbox.com/s/y4kl2gv1akv7y4i/stage-2.pth?raw=1'
-model_file_name = 'model'
-classes = ['black', 'grizzly', 'teddys']
+model_file_url = 'https://drive.google.com/uc?export=download&id=1-2vMyvg8mBOpPAtes3C87IqJJeR3n0WX'
+model_file_name = 'eye_first_714.pkl'
+classes = ['Normal', 'Diabetic', 'Glaucoma', 'Cataract', 'AMD', 'Hypertension', 'Myopia','Other_abnormalities']
 path = Path(__file__).parent
 
 app = Starlette()
@@ -46,8 +46,16 @@ async def analyze(request):
     data = await request.form()
     img_bytes = await (data['file'].read())
     img = open_image(BytesIO(img_bytes))
-    prediction = learn.predict(img)[0]
-    return JSONResponse({'result': str(prediction)})
+    p = learn.predict(img)[2].numpy()
+    idx = []
+    percent = []
+    for i in range(8):
+        if p[i]>0.3:
+            idx.append(i)
+            percent.append(p[i])
+    pred = [str(classes[x])+" "+str(percent[x]*100) for x in range(len(idx))]
+    pred = " ".join(str(x) for x in pred)
+    return JSONResponse({'result': str(pred)})
 
 if __name__ == '__main__':
     if 'serve' in sys.argv: uvicorn.run(app, host='0.0.0.0', port=8080)
